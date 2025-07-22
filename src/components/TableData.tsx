@@ -29,7 +29,8 @@ export default function TableData() {
   );
   const [page, setPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
-  const [rowCount, setRowCount] = useState<number>(null);
+  const [rowCount, setRowCount] = useState<number>(0);
+  const [loading, setLoading] = useState<boolean>(false);
 
   const handleSubmit = async () => {
     const targetCount = rowCount ?? 0;
@@ -68,10 +69,12 @@ export default function TableData() {
 
   const fetchArtworks = async (pageNum: number) => {
     try {
+      setLoading(true);
       const res = await fetch(
         `https://api.artic.edu/api/v1/artworks?page=${pageNum}`
       );
       const json: ApiResponse = await res.json();
+      setLoading(false);
       setProducts(json.data);
       setTotalPages(json.pagination.total_pages);
     } catch (err) {
@@ -117,7 +120,9 @@ export default function TableData() {
           onSelectionChange={(e) =>
             setSelectedProducts(e.value as unknown as Artwork[])
           }
+          loading={loading}
           dataKey="id"
+          selectionMode="multiple"
           tableStyle={{ minWidth: "50rem", maxWidth: "1440px", width: "auto" }}
         >
           <Column
