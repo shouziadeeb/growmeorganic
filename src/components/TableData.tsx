@@ -32,30 +32,60 @@ export default function TableData() {
   const [rowCount, setRowCount] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
 
+  // const handleSubmit = async () => {
+  //   const targetCount = rowCount ?? 0;
+  //   const selected: Artwork[] = [];
+  //   let currentPage = 1;
+
+  //   while (selected.length < targetCount && currentPage <= totalPages) {
+  //     const res = await fetch(
+  //       `https://api.artic.edu/api/v1/artworks?page=${currentPage}`
+  //     );
+  //     const json: ApiResponse = await res.json();
+
+  //     const remaining = targetCount - selected.length;
+  //     selected.push(...json.data.slice(0, remaining));
+
+  //     if (json.data.length >= remaining) {
+  //       break; // we got enough
+  //     }
+
+  //     currentPage++;
+  //   }
+
+  //   setSelectedProducts(selected);
+  //   setPage(1); // Optional: go back to page 1 so the user sees the first page
+  //   op.current?.hide();
+  // };
   const handleSubmit = async () => {
     const targetCount = rowCount ?? 0;
-    const selected: Artwork[] = [];
-    let currentPage = 1;
+    const perPage = 12;
+    const pagesNeeded = Math.ceil(targetCount / perPage);
 
-    while (selected.length < targetCount && currentPage <= totalPages) {
-      const res = await fetch(
-        `https://api.artic.edu/api/v1/artworks?page=${currentPage}`
+    const pageNumbers = Array.from({ length: pagesNeeded }, (_, i) => i + 1);
+
+    try {
+      setLoading(true);
+
+      const fetches = pageNumbers.map((pageNum) =>
+        fetch(`https://api.artic.edu/api/v1/artworks?page=${pageNum}`).then(
+          (res) => res.json()
+        )
       );
-      const json: ApiResponse = await res.json();
 
-      const remaining = targetCount - selected.length;
-      selected.push(...json.data.slice(0, remaining));
+      const results: ApiResponse[] = await Promise.all(fetches);
 
-      if (json.data.length >= remaining) {
-        break; // we got enough
-      }
+      const allData = results.flatMap((result) => result.data);
+      const slicedData = allData.slice(0, targetCount);
 
-      currentPage++;
+      setSelectedProducts(slicedData);
+      setLoading(false);
+      setPage(1);
+      op.current?.hide();
+    } catch (error) {
+      console.error("Bulk fetch error:", error);
+      setLoading(false);
     }
-
-    setSelectedProducts(selected);
-    setPage(1); // Optional: go back to page 1 so the user sees the first page
-    op.current?.hide();
   };
 
   const headerTemplate = () => (
